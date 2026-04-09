@@ -45,15 +45,11 @@ private:
 
 template<>
 struct matjson::Serialize<horn::Cache> {
-    static horn::Cache from_json(matjson::Value const& json) {
+    static horn::Cache fromJson(matjson::Value const& json) {
         return horn::Cache(json);
     }
 
-    static matjson::Value to_json(horn::Cache const& cache) {
+    static matjson::Value toJson(horn::Cache const& cache) {
         return cache.json();
-    }
-
-    static bool is_json(horn::Cache const& cache) {
-        return true;
     }
 };

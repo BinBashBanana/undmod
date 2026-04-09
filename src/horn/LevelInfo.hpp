@@ -35,15 +35,11 @@ private:
 
 template<>
 struct matjson::Serialize<horn::LevelInfo> {
-    static horn::LevelInfo from_json(matjson::Value const& json) {
+    static horn::LevelInfo fromJson(matjson::Value const& json) {
         return horn::LevelInfo(json);
     }
 
-    static matjson::Value to_json(horn::LevelInfo const& levelInfo) {
+    static matjson::Value toJson(horn::LevelInfo const& levelInfo) {
         return levelInfo.json();
-    }
-
-    static bool is_json(horn::LevelInfo const& json) {
-        return true;
     }
 };

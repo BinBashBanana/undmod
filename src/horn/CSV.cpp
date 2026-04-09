@@ -5,10 +5,9 @@
 namespace horn {
 
 std::vector<CSV::Row> CSV::rows() {
-    using namespace geode::utils;
     std::vector<Row> rows;
 
-    for (auto const& row : string::split(m_str, "\n")) {
+    for (auto const& row : geode::utils::string::split(m_str, "\n")) {
         rows.push_back(parse(row));
     }
 

@@ -1,65 +1,67 @@
-#include <Geode/modify/GJDifficultySprite.hpp>
+#include "GJDifficultySprite.hpp"
 
-#include <Geode/binding/GJGameLevel.hpp>
-#include <Geode/loader/Log.hpp>
-#include <Geode/loader/Mod.hpp>
 #include <fmt/format.h>
 
 #include "../horn/Manager.hpp"
 
-class $modify(GJDifficultySprite) {
-    //! @brief This is a perfect place to hook since it takes a level as a
-    //! parameter and is layer-agnostic. Praying this isn't inlined on mac.
-    void updateFeatureStateFromLevel(GJGameLevel* level) {
-        GJDifficultySprite::updateFeatureStateFromLevel(level);
+// This seems hacky, but I think it should always work.
+static int currentLevelCellId = -1;
+namespace horn {
+    void setLoadingLevelCellId(int id) {
+        currentLevelCellId = id;
+    }
+}
 
+void CustomGJDifficultySprite::updateFeatureState(GJFeatureState state) {
+    GJDifficultySprite::updateFeatureState(state);
+    if (currentLevelCellId >= 0) {
         auto cache = horn::Manager::sharedManager()->getCache();
-        auto levelInfo = cache.getLevelInfo(level->m_levelID);
-
+        auto levelInfo = cache.getLevelInfo(currentLevelCellId);
         if (!levelInfo) {
             return;
         }
+        decorateFromTier(levelInfo->tier());
+    }
+}
 
-        int tier = levelInfo->tier();
+//! @brief Add horns/eyes to difficulty sprite if enabled.
+void CustomGJDifficultySprite::decorateFromTier(int tier) {
+    if (horn::Manager::sharedManager()->showHorns()) {
         updateHorns(tier);
-
         if (tier == 6) {
-            updateTakayama();
+            updateEyes();
         }
     }
+}
 
-    //! @brief Add horns.
-    void updateHorns(int tier) {
-        if (m_fields->m_hornsCreated) {
-            return;
-        }
-
-        std::string frame = fmt::format("horn{:02}_001.png"_spr, tier);
-        auto* horns = cocos2d::CCSprite::createWithSpriteFrameName(
-            frame.c_str()
-        );
-        horns->setPosition(getContentSize() / 2.0f);
-        addChild(horns, -1);
-
-        m_fields->m_hornsCreated = true;
+//! @brief Add horns.
+void CustomGJDifficultySprite::updateHorns(int tier) {
+    if (m_fields->m_hornsCreated) {
+        return;
     }
 
-    //! @brief Add Super Mario Bros 2D easter egg.
-    void updateTakayama() {
-        if (m_fields->m_takayamaCreated) {
-            return;
-        }
+    std::string frame = fmt::format("horn{:02}_001.png"_spr, tier);
+    auto* horns = cocos2d::CCSprite::createWithSpriteFrameName(
+        frame.c_str()
+    );
+    horns->setPosition(getContentSize() / 2.0f);
+    addChild(horns, -1);
 
-        auto* eyes = cocos2d::CCSprite::createWithSpriteFrameName(
-            "takayama_001.png"_spr
-        );
-        eyes->setPosition(getContentSize() / 2.0f);
-        eyes->setBlendFunc({ GL_SRC_ALPHA, GL_ONE });
-        addChild(eyes, 2);
+    m_fields->m_hornsCreated = true;
+}
 
-        m_fields->m_takayamaCreated = true;
+//! @brief Add eyes for tier 6.
+void CustomGJDifficultySprite::updateEyes() {
+    if (m_fields->m_eyesCreated) {
+        return;
     }
-    
-    bool m_hornsCreated;
-    bool m_takayamaCreated;
-};
+
+    auto* eyes = cocos2d::CCSprite::createWithSpriteFrameName(
+        "eye06_001.png"_spr
+    );
+    eyes->setPosition(getContentSize() / 2.0f);
+    eyes->setBlendFunc({ GL_SRC_ALPHA, GL_ONE });
+    addChild(eyes, 2);
+
+    m_fields->m_eyesCreated = true;
+}

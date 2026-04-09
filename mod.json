@@ -1,11 +1,22 @@
 {
-	"geode": "2.0.0-beta.21",
-	"gd": "2.204",
-	"version": "v1.0.0",
-	"id": "acaruso.horn",
+	"geode": "5.4.1",
+	"gd": {
+		"win": "2.2081",
+		"android": "2.2081",
+		"mac": "2.2081",
+		"ios": "2.2081"
+	},
+	"version": "v3.0.0",
+	"id": "olyb.horn",
 	"name": "Underrated Non-Demons",
-	"developer": "acaruso",
+	"developers": ["acaruso", "OlyB"],
 	"description": "Underrated non-demons list integration",
+	"links": {
+		"source": "https://github.com/BinBashBanana/undmod",
+		"homepage": "https://docs.google.com/spreadsheets/d/1-Abvx7zXRAqpGFVbdTXpn6g1TRYp9WuZqW2pHWE7Dr4/view",
+		"community": "https://discord.gg/RnPbkWV6dr"
+	},
+	"tags": ["enhancement", "interface"],
 
 	"resources": {
 		"spritesheets": {
@@ -17,7 +28,36 @@
 
 	"settings": {
 		"refresh": {
-			"type": "custom"
+			"type": "custom:refreshbutton",
+			"name": "Refresh UND sheet data",
+			"description": "Manually download data from UND spreadsheet. This happens automatically on startup if it hasn't been refreshed in the last 7 days."
+		},
+		"show-horns": {
+			"type": "bool",
+			"name": "Show horns",
+			"default": true
+		},
+		"show-tier-text": {
+			"type": "bool",
+			"name": "Show tier text",
+			"default": true
+		},
+		"advanced-title": {
+			"type": "title",
+			"name": "Advanced settings"
+		},
+		"enable-alternate-sheet-url": {
+			"type": "bool",
+			"name": "Enable alternate sheet URL",
+			"default": false,
+			"description": "URL must return data in CSV format. Columns should be level ID, tier, skillset, and description, in that order. Header row is ignored. [Example](https://docs.google.com/spreadsheets/d/1-Abvx7zXRAqpGFVbdTXpn6g1TRYp9WuZqW2pHWE7Dr4/gviz/tq?sheet=All%20levels%20in%20chronological%20order&tqx=out:csv&tq=select%20F,%20C,%20G,%20H)"
+		},
+		"alternate-sheet-url": {
+			"type": "string",
+			"name": "Alternate sheet URL",
+			"default": "https://...",
+			"match": "^https?://.*",
+			"filter": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 !@#$%^&*()-=_+[]{}\\|;':\",./<>?`~"
 		}
 	}
 }

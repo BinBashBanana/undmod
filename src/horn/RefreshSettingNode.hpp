@@ -1,46 +1,54 @@
 #pragma once
 
+#include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 #include <Geode/binding/LoadingCircle.hpp>
-#include <Geode/loader/SettingNode.hpp>
+#include <Geode/loader/SettingV3.hpp>
+#include <Geode/ui/LoadingSpinner.hpp>
+#include <Geode/cocos/menu_nodes/CCMenuItem.h>
 
 namespace horn {
 
 class RefreshSettingValue;
 
 //! @brief Refresh setting node.
-class RefreshSettingNode : public geode::SettingNode {
+class RefreshSettingNode : public geode::SettingNodeV3 {
 public:
-    RefreshSettingNode();
-
     //! @brief Create refresh setting node.
-    //! @param value Setting value.
+    //! @param setting Setting value.
     //! @param width Width of settings layer.
     //! @return Refresh button.
-    static RefreshSettingNode* create(
-        RefreshSettingValue* value, 
-        float width
-    );
+    static RefreshSettingNode* create(std::shared_ptr<RefreshSettingValue> setting, float width) {
+        auto ret = new RefreshSettingNode();
+        if (ret->init(setting, width)) {
+            ret->autorelease();
+            return ret;
+        }
+        delete ret;
+        return nullptr;
+    }
 
-    //! @brief Initialize refresh setting node.
-    //! @param value Setting value.
-    //! @param width Width of settings layer.
-    //! @return Whether the initialization was successful.
-    bool init(RefreshSettingValue* value, float width);
+    bool hasUncommittedChanges() const override { return false; }
+    bool hasNonDefaultValue() const override { return false; }
 
-    void commit() override {}
-    bool hasUncommittedChanges() override { return false; }
-    bool hasNonDefaultValue() override { return false; }
-    void resetToDefault() override {}
+    std::shared_ptr<RefreshSettingValue> getSetting() const {
+        return std::static_pointer_cast<RefreshSettingValue>(SettingNodeV3::getSetting());
+    }
 
 private:
+    bool init(std::shared_ptr<RefreshSettingValue> setting, float width);
+
     //! @brief Refresh callback.
     //! @param sender Sender.
     void onRefresh(cocos2d::CCObject* sender);
 
-    cocos2d::CCMenu* m_menu;
+    void onCommit() override {}
+    void onResetToDefault() override {}
+
+    cocos2d::CCSprite* m_buttonSprite;
     CCMenuItemSpriteExtra* m_button;
-    LoadingCircle* m_loadingCircle;
+    cocos2d::CCMenuItem* m_spinnerHolder;
+    geode::LoadingSpinner* m_spinner;
 };
 
 } // namespace horn

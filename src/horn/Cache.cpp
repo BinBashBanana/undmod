@@ -2,14 +2,13 @@
 
 #include <Geode/loader/Log.hpp>
 #include <Geode/utils/string.hpp>
+#include <Geode/utils/general.hpp>
 
 #include "CSV.hpp"
 
 namespace horn {
 
 Cache::Cache(std::string const& str) {
-    using namespace geode::utils;
-    
     m_timestamp = std::time(nullptr);
     
     CSV csv(str);
@@ -19,17 +18,19 @@ Cache::Cache(std::string const& str) {
     for (int i = 1; i < rows.size(); i++) {
         auto row = rows[i];
 
-        int levelID = std::stoi(row[0]);
+        int levelID = geode::utils::numFromString<int>(row[0]).unwrapOrDefault();
         m_levels.emplace(levelID, row);
     }
 }
 
 Cache::Cache(matjson::Value const& json) {
-    m_timestamp = json["timestamp"].as_int();
+    m_timestamp = json["timestamp"].asInt().unwrapOr(0);
+    if (m_timestamp == 0) {
+        return;
+    }
 
-    auto levels = json["levels"].as_object();
-    for (auto& [k, v] : levels) {
-        int levelID = std::stoi(k);
+    for (auto& [k, v] : json["levels"]) {
+        int levelID = geode::utils::numFromString<int>(k).unwrapOrDefault();
         auto info = horn::LevelInfo(v);
 
         m_levels[levelID] = info;
@@ -37,14 +38,14 @@ Cache::Cache(matjson::Value const& json) {
 }
 
 matjson::Value Cache::json() const {
-    matjson::Object levels;
+    matjson::Value levels;
     for (auto [levelID, info] : m_levels) {
         std::string k = std::to_string(levelID);
 
         levels[k] = info;
     }
 
-    matjson::Object res;
+    matjson::Value res;
     res["timestamp"] = m_timestamp;
     res["levels"] = levels;
 

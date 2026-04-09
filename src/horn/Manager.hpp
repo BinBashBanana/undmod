@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Geode/loader/Mod.hpp>
+#include <Geode/utils/web.hpp>
+#include <Geode/utils/async.hpp>
 #include <functional>
 
 #include "Cache.hpp"
@@ -20,6 +22,9 @@ public:
 
     //! @brief Attempt to refresh data.
     void refresh();
+
+    //! @brief Load/reload mod settings.
+    void loadSettings();
 
     //! @brief Download and update cache.
     //! @param finished Download finished callback.
@@ -43,6 +48,9 @@ public:
 
     Cache const& getCache() const { return m_cache; }
 
+    bool showHorns() const { return m_showHorns; }
+    bool showTierText() const { return m_showTierText; }
+
 private:
     //! @brief Get internal spreadsheet ID.
     //! @return Spreadsheet ID.finished
@@ -54,7 +62,12 @@ private:
 
     static Manager* s_sharedManager;
 
+    geode::async::TaskHolder<geode::utils::web::WebResponse> s_fetchListener;
+
     Cache m_cache;
+
+    bool m_showHorns;
+    bool m_showTierText;
 };
 
 } // namespace horn

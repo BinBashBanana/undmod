@@ -5,10 +5,17 @@
 #include <Geode/binding/GJDifficultySprite.hpp>
 #include <Geode/binding/GJGameLevel.hpp>
 #include <Geode/loader/Mod.hpp>
+#include <fmt/format.h>
 
 #include "../horn/Manager.hpp"
+#include "GJDifficultySprite.hpp"
 
 class $modify(CustomLevelInfoLayer, LevelInfoLayer) {
+    struct Fields {
+        std::optional<horn::LevelInfo> m_levelInfo;
+        CCMenuItemSpriteExtra* m_difficultyButton;
+    };
+
     bool init(GJGameLevel* level, bool p1) {
         if (!LevelInfoLayer::init(level, p1)) {
             return false;
@@ -18,10 +25,15 @@ class $modify(CustomLevelInfoLayer, LevelInfoLayer) {
         m_fields->m_levelInfo = cache.getLevelInfo(level->m_levelID);
 
         if (m_fields->m_levelInfo) {
+            int tier = m_fields->m_levelInfo->tier();
+
             addHintArt();
+            addTierText(tier);
 
             addButton();
             updateButton();
+
+            static_cast<CustomGJDifficultySprite*>(m_difficultySprite)->decorateFromTier(tier);
         }
 
         return true;
@@ -37,8 +49,7 @@ class $modify(CustomLevelInfoLayer, LevelInfoLayer) {
 
     //! @brief Add hint art if not already shown.
     void addHintArt() {
-        auto* mgr = horn::Manager::sharedManager();
-        if (mgr->getHintShown()) {
+        if (horn::Manager::sharedManager()->getHintShown()) {
             return;
         }
 
@@ -51,8 +62,42 @@ class $modify(CustomLevelInfoLayer, LevelInfoLayer) {
             "hint_001.png"_spr
         );
         hint->setPosition(position);
+        hint->setID("und-button-hint"_spr);
 
         addChild(hint);
+    }
+
+    //! @brief Add tier text.
+    void addTierText(int tier) {
+        if (!horn::Manager::sharedManager()->showTierText()) {
+            return;
+        }
+
+        cocos2d::CCPoint position = m_difficultySprite->getPosition();
+        if (m_coins->count()) {
+            position.y -= 59.0f;
+        } else {
+            position.y -= 43.0f;
+        }
+
+        std::string text = fmt::format("UND T{}", tier);
+        auto* tierSprite = cocos2d::CCLabelBMFont::create(text.c_str(), "bigFont.fnt", 100.0f);
+        tierSprite->setPosition(position);
+        tierSprite->setScale(0.333f);
+        static cocos2d::ccColor3B colors[6] = {
+            { 0x60, 0xff, 0xfe },
+            { 0x5f, 0xfb, 0x3a },
+            { 0xff, 0xfc, 0x42 },
+            { 0xf6, 0x97, 0x2c },
+            { 0xf2, 0x0b, 0x1d },
+            { 0x00, 0x00, 0x00 }
+        };
+        if (tier >= 0 && tier <= 6) {
+            tierSprite->setColor(colors[tier - 1]);
+        }
+        tierSprite->setID("und-tier-text"_spr);
+
+        addChild(tierSprite);
     }
 
     //! @brief Add difficulty button.
@@ -73,6 +118,7 @@ class $modify(CustomLevelInfoLayer, LevelInfoLayer) {
         });
 
         menu->addChild(m_fields->m_difficultyButton);
+        menu->setID("und-difficulty-button"_spr);
         addChild(menu);
 
         removeChild(m_difficultySprite);
@@ -108,7 +154,4 @@ class $modify(CustomLevelInfoLayer, LevelInfoLayer) {
             400.0f
         )->show();
     }
-
-    std::optional<horn::LevelInfo> m_levelInfo;
-    CCMenuItemSpriteExtra* m_difficultyButton;
 };

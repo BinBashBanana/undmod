@@ -1,8 +1,8 @@
 #include "Manager.hpp"
 
 #include <Geode/loader/Log.hpp>
+#include <Geode/loader/SettingV3.hpp>
 #include <Geode/utils/string.hpp>
-#include <Geode/utils/web.hpp>
 #include <fmt/format.h>
 
 #include <string>
@@ -21,16 +21,15 @@ Manager* Manager::sharedManager() {
 }
 
 bool Manager::init() {
-    m_cache = geode::Mod::get()->getSavedValue<Cache>("cache");
+    m_cache = Cache(geode::Mod::get()->getSavedValue<matjson::Value>("cache"));
+    loadSettings();
 
     return true;
 }
 
 static std::string urlencode(std::string const& str) {
-    using namespace geode::utils;
-    
     // I see no problems with this.
-    return string::replace(str, " ", "%20");
+    return geode::utils::string::replace(str, " ", "%20");
 }
 
 void Manager::refresh() {
@@ -46,36 +45,41 @@ void Manager::download(
     std::function<void()> finished,
     std::function<void()> failed
 ) {
-    using namespace geode::utils;
-
     geode::log::info("Downloading level info");
+    std::string url;
 
-    std::string sheet = "All levels in chronological order";
-    std::string tqx = "out:csv";
-    std::string tq = "select D, E, F, G";
-    std::string query = fmt::format(
-        "sheet={}&tqx={}&tq={}",
-        sheet,
-        tqx,
-        tq
+    if (geode::Mod::get()->getSettingValue<bool>("enable-alternate-sheet-url")) {
+        url = geode::Mod::get()->getSettingValue<std::string>("alternate-sheet-url");
+    } else {
+        std::string sheet = "All levels in chronological order";
+        std::string tqx = "out:csv";
+        std::string tq = "select F, C, G, H";
+        std::string query = fmt::format(
+            "sheet={}&tqx={}&tq={}",
+            sheet,
+            tqx,
+            tq
+        );
+
+        url = fmt::format(
+            "https://docs.google.com/spreadsheets/d/{}/gviz/tq?{}",
+            getSheetID(),
+            urlencode(query)
+        );
+    }
+
+    auto req = geode::utils::web::WebRequest();
+    s_fetchListener.spawn(
+        req.get(url),
+        [=, this](geode::utils::web::WebResponse res) {
+            if (res.ok()) {
+                cache(res.string().unwrap());
+                finished();
+            } else {
+                failed();
+            }
+        }
     );
-
-    std::string url = fmt::format(
-        "https://docs.google.com/spreadsheets/d/{}/gviz/tq?{}",
-        getSheetID(),
-        urlencode(query)
-    );
-
-    web::AsyncWebRequest()
-        .fetch(url)
-        .text()
-        .then([=, this](std::string const& str) {
-            cache(str);
-            finished();
-        })
-        .expect([=](std::string const& error) {
-            failed();
-        });
 }
 
 std::string Manager::getSheetID() const {
@@ -84,11 +88,22 @@ std::string Manager::getSheetID() const {
 
 void Manager::cache(std::string const& str) {
     m_cache = Cache(str);
-    geode::Mod::get()->setSavedValue("cache", m_cache);
+    geode::Mod::get()->setSavedValue("cache", m_cache.json());
+}
+
+void Manager::loadSettings() {
+    m_showHorns = geode::Mod::get()->getSettingValue<bool>("show-horns");
+    m_showTierText = geode::Mod::get()->getSettingValue<bool>("show-tier-text");
 }
 
 } // namespace horn
 
 $on_mod(Loaded) {
     horn::Manager::sharedManager()->refresh();
+    geode::listenForSettingChanges<bool>("show-horns", [](bool v) {
+        horn::Manager::sharedManager()->loadSettings();
+    });
+    geode::listenForSettingChanges<bool>("show-tier-text", [](bool v) {
+        horn::Manager::sharedManager()->loadSettings();
+    });
 }
