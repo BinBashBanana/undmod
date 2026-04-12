@@ -73,8 +73,13 @@ void Manager::download(
         req.get(url),
         [=, this](geode::utils::web::WebResponse res) {
             if (res.ok()) {
-                cache(res.string().unwrap());
-                finished();
+                auto str = res.string();
+                if (str.isOk()) {
+                    cache(str.unwrap());
+                    finished();
+                } else {
+                    failed();
+                }
             } else {
                 failed();
             }
