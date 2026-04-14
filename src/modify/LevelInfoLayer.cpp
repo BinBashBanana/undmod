@@ -74,10 +74,12 @@ class $modify(CustomLevelInfoLayer, LevelInfoLayer) {
         }
 
         cocos2d::CCPoint position = m_difficultySprite->getPosition();
+        position.y -= 43.0f;
         if (m_coins->count()) {
-            position.y -= 59.0f;
-        } else {
-            position.y -= 43.0f;
+            position.y -= 16.0f;
+        }
+        if (m_level->m_gauntletLevel || m_level->m_gauntletLevel2) {
+            position.y -= 14.5f;
         }
 
         std::string text = fmt::format("UND T{}", tier);

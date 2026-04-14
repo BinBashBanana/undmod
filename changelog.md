@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.0.2
+
+- Bugfixes
+
 ## v3.0.1
 
 - Bump version for Geode mod index

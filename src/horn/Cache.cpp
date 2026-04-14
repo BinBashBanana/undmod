@@ -24,11 +24,10 @@ Cache::Cache(std::string const& str) {
 }
 
 Cache::Cache(matjson::Value const& json) {
-    auto ts = json["timestamp"].asInt();
-    if (ts.isErr()) {
+    m_timestamp = json["timestamp"].asInt().unwrapOr(0);
+    if (m_timestamp == 0) {
         return;
     }
-    m_timestamp = ts.unwrap();
 
     for (auto& [k, v] : json["levels"]) {
         int levelID = geode::utils::numFromString<int>(k).unwrapOrDefault();
