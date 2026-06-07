@@ -31,7 +31,7 @@ public:
     //! @param failed Download failed callback.
     void download(
         std::function<void()> finished,
-        std::function<void()> failed
+        std::function<void(std::string)> failed
     );
 
     //! @brief Get hint shown.
@@ -47,15 +47,12 @@ public:
     }
 
     Cache const& getCache() const { return m_cache; }
+    matjson::Value const& getPacks() const { return m_packs; }
 
     bool showHorns() const { return m_showHorns; }
     bool showTierText() const { return m_showTierText; }
 
 private:
-    //! @brief Get internal spreadsheet ID.
-    //! @return Spreadsheet ID.finished
-    std::string getSheetID() const;
-
     //! @brief Update cache from response data.
     //! @param str Response data.
     void cache(std::string const& str);
@@ -65,6 +62,7 @@ private:
     geode::async::TaskHolder<geode::utils::web::WebResponse> s_fetchListener;
 
     Cache m_cache;
+    matjson::Value m_packs;
 
     bool m_showHorns;
     bool m_showTierText;

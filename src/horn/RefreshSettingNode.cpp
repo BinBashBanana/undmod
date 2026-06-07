@@ -1,6 +1,7 @@
 #include "RefreshSettingNode.hpp"
 
 #include <Geode/binding/FLAlertLayer.hpp>
+#include <Geode/ui/Notification.hpp>
 #include "RefreshSettingValue.hpp"
 #include "Manager.hpp"
 
@@ -11,34 +12,35 @@ bool RefreshSettingNode::init(std::shared_ptr<RefreshSettingValue> setting, floa
         return false;
     }
 
-    this->getButtonMenu()->setContentWidth(20.0f);
-    auto pos = this->getButtonMenu()->getContentSize() / 2.0f;
+    auto* menu = getButtonMenu();
+    menu->setContentWidth(20.0f);
+    auto pos = menu->getContentSize() / 2.0f;
 
-    m_buttonSprite = cocos2d::CCSprite::createWithSpriteFrameName(
+    auto* buttonSprite = cocos2d::CCSprite::createWithSpriteFrameName(
         "GJ_updateBtn_001.png"
     );
-    m_buttonSprite->setScale(0.5f);
+    buttonSprite->setScale(0.5f);
 
     m_button = CCMenuItemSpriteExtra::create(
-        m_buttonSprite,
+        buttonSprite,
         this,
         menu_selector(RefreshSettingNode::onRefresh)
     );
     m_button->setPosition(pos);
-    this->getButtonMenu()->addChild(m_button);
+    menu->addChild(m_button);
 
     m_spinner = geode::LoadingSpinner::create(20.0f);
     m_spinner->setVisible(false);
 
-    m_spinnerHolder = cocos2d::CCMenuItem::create();
-    m_spinnerHolder->setContentSize({ 20.0f, 20.0f });
-    m_spinnerHolder->setPosition(pos);
+    auto* spinnerHolder = cocos2d::CCMenuItem::create();
+    spinnerHolder->setContentSize({ 20.0f, 20.0f });
+    spinnerHolder->setPosition(pos);
     m_spinner->setPosition({
-        m_spinnerHolder->getContentSize() / 2.0f
+        spinnerHolder->getContentSize() / 2.0f
     });
 
-    m_spinnerHolder->addChild(m_spinner);
-    this->getButtonMenu()->addChild(m_spinnerHolder);
+    spinnerHolder->addChild(m_spinner);
+    menu->addChild(spinnerHolder);
 
     return true;
 }
@@ -51,14 +53,16 @@ void RefreshSettingNode::onRefresh(cocos2d::CCObject* sender) {
         [this] {
             m_spinner->setVisible(false);
             m_button->setVisible(true);
+
+            geode::Notification::create("Successfully refreshed", geode::NotificationIcon::Success, 1.0f)->show();
         },
-        [this] {
+        [this](std::string err) {
             m_spinner->setVisible(false);
             m_button->setVisible(true);
 
             FLAlertLayer::create(
                 "Error",
-                "Download failed. Please try again later.",
+                fmt::format("Download failed. Please try again later.\nMessage: {}", err),
                 "OK"
             )->show();
         }

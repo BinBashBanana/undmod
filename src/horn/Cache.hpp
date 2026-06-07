@@ -32,9 +32,10 @@ public:
     //! @brief Get level info for level.
     //! @param levelID Level ID.
     //! @return Level info.
-    std::optional<LevelInfo> getLevelInfo(int levelID);
+    std::optional<LevelInfo> getLevelInfo(int levelID) const;
 
     std::time_t getTimestamp() const { return m_timestamp; }
+    std::unordered_map<int, LevelInfo> const& getLevels() const { return m_levels; }
 
 private:
     std::time_t m_timestamp;

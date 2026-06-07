@@ -12,21 +12,34 @@ namespace horn {
     }
 }
 
+static const std::unordered_map<int, bool> easterEggLevels = {
+    { 13518208, false },
+    { 14031694, false },
+    { 21354428, true }
+};
+
 void CustomGJDifficultySprite::updateFeatureState(GJFeatureState state) {
     GJDifficultySprite::updateFeatureState(state);
     if (currentLevelCellId >= 0) {
-        auto cache = horn::Manager::sharedManager()->getCache();
+        const auto& cache = horn::Manager::sharedManager()->getCache();
         auto levelInfo = cache.getLevelInfo(currentLevelCellId);
         if (!levelInfo) {
             return;
         }
-        decorateFromTier(levelInfo->tier());
+        decorate(levelInfo->tier(), currentLevelCellId);
     }
 }
 
-//! @brief Add horns/eyes to difficulty sprite if enabled.
-void CustomGJDifficultySprite::decorateFromTier(int tier) {
+void CustomGJDifficultySprite::decorate(int tier, int levelID) {
     if (horn::Manager::sharedManager()->showHorns()) {
+        auto easterEgg = easterEggLevels.find(levelID);
+        if (easterEgg != easterEggLevels.end()) {
+            updateEasterEgg(levelID);
+            if (easterEgg->second) {
+                return;
+            }
+        }
+
         updateHorns(tier);
         if (tier == 6) {
             updateEyes();
@@ -34,7 +47,22 @@ void CustomGJDifficultySprite::decorateFromTier(int tier) {
     }
 }
 
-//! @brief Add horns.
+void CustomGJDifficultySprite::updateEasterEgg(int levelID) {
+    if (m_fields->m_easterEggCreated) {
+        return;
+    }
+
+    std::string frame = fmt::format("{}.png"_spr, levelID);
+    auto* newFace = cocos2d::CCSprite::createWithSpriteFrameName(
+        frame.c_str()
+    );
+    newFace->setPosition(getContentSize() / 2.0f);
+    addChild(newFace);
+    setOpacity(0);
+
+    m_fields->m_easterEggCreated = true;
+}
+
 void CustomGJDifficultySprite::updateHorns(int tier) {
     if (m_fields->m_hornsCreated) {
         return;
@@ -50,7 +78,6 @@ void CustomGJDifficultySprite::updateHorns(int tier) {
     m_fields->m_hornsCreated = true;
 }
 
-//! @brief Add eyes for tier 6.
 void CustomGJDifficultySprite::updateEyes() {
     if (m_fields->m_eyesCreated) {
         return;

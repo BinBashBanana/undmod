@@ -1,12 +1,12 @@
 {
-	"geode": "5.4.1",
+	"geode": "5.7.1",
 	"gd": {
 		"win": "2.2081",
 		"android": "2.2081",
 		"mac": "2.2081",
 		"ios": "2.2081"
 	},
-	"version": "v3.0.2",
+	"version": "v3.1.0",
 	"id": "olyb.horn",
 	"name": "Underrated Non-Demons",
 	"developers": ["acaruso", "OlyB"],
@@ -21,9 +21,14 @@
 	"resources": {
 		"spritesheets": {
 			"HornSheet": [
-				"resources/*.png"
+				"resources/*.png",
+				"resources/easter_eggs/*.png",
+				"logo.png"
 			]
-		}
+		},
+		"files": [
+			"resources/packs.json"
+		]
 	},
 
 	"settings": {
@@ -50,7 +55,7 @@
 			"type": "bool",
 			"name": "Enable alternate sheet URL",
 			"default": false,
-			"description": "URL must return data in CSV format. Columns should be level ID, tier, skillset, and description, in that order. Header row is ignored. [Example](https://docs.google.com/spreadsheets/d/1-Abvx7zXRAqpGFVbdTXpn6g1TRYp9WuZqW2pHWE7Dr4/gviz/tq?sheet=All%20levels%20in%20chronological%20order&tqx=out:csv&tq=select%20F,%20C,%20G,%20H)"
+			"description": "URL must return data in CSV format. Columns should be Level ID, Tier, Difficulty, Skillset, and Description, in that order. Use those strings in the header row. [Example](https://docs.google.com/spreadsheets/d/1-Abvx7zXRAqpGFVbdTXpn6g1TRYp9WuZqW2pHWE7Dr4/gviz/tq?sheet=All%20levels%20in%20chronological%20order&tqx=out:csv&tq=select%20F,%20C,%20B,%20G,%20H)"
 		},
 		"alternate-sheet-url": {
 			"type": "string",

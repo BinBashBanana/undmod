@@ -6,6 +6,8 @@
 
 #include "CSV.hpp"
 
+#define CACHE_VERSION 2
+
 namespace horn {
 
 Cache::Cache(std::string const& str) {
@@ -25,15 +27,19 @@ Cache::Cache(std::string const& str) {
 
 Cache::Cache(matjson::Value const& json) {
     m_timestamp = json["timestamp"].asInt().unwrapOr(0);
-    if (m_timestamp == 0) {
+    // discard if timestamp is missing or invalid
+    if (m_timestamp <= 0) {
+        return;
+    }
+    // discard if version is missing or different
+    if (json["version"].asInt().unwrapOr(0) != CACHE_VERSION) {
+        m_timestamp = 0;
         return;
     }
 
     for (auto& [k, v] : json["levels"]) {
         int levelID = geode::utils::numFromString<int>(k).unwrapOrDefault();
-        auto info = horn::LevelInfo(v);
-
-        m_levels[levelID] = info;
+        m_levels.emplace(levelID, v);
     }
 }
 
@@ -46,18 +52,19 @@ matjson::Value Cache::json() const {
     }
 
     matjson::Value res;
+    res["version"] = CACHE_VERSION;
     res["timestamp"] = m_timestamp;
     res["levels"] = levels;
 
     return res;
 }
 
-std::optional<LevelInfo> Cache::getLevelInfo(int levelID) {
-    if (m_levels.count(levelID) == 0) {
+std::optional<LevelInfo> Cache::getLevelInfo(int levelID) const {
+    auto info = m_levels.find(levelID);
+    if (info == m_levels.end()) {
         return std::nullopt;
     }
-
-    return m_levels[levelID];
+    return info->second;
 }
 
 } // namespace horn

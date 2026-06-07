@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Geode/Enums.hpp>
 #include <matjson.hpp>
 #include <string>
 #include <vector>
@@ -22,11 +23,13 @@ public:
     matjson::Value json() const;
 
     int tier() const { return m_tier; }
+    GJDifficulty difficulty() const { return m_difficulty; }
     std::string skillset() const { return m_skillset; }
     std::string description() const { return m_description; }
 
 private:
     int m_tier;
+    GJDifficulty m_difficulty;
     std::string m_skillset;
     std::string m_description;
 };

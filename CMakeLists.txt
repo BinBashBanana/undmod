@@ -12,20 +12,9 @@ set(GEODE_DISABLE_PRECOMPILED_HEADERS ON)
 
 project(horn VERSION 1.0.0)
 
-add_library(
-    ${PROJECT_NAME} SHARED
-    
-    src/horn/Cache.cpp
-    src/horn/CSV.cpp
-    src/horn/LevelInfo.cpp
-    src/horn/Manager.cpp
-    src/horn/RefreshSettingNode.cpp
-    src/horn/RefreshSettingValue.cpp
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 
-    src/modify/GJDifficultySprite.cpp
-    src/modify/LevelCell.cpp
-    src/modify/LevelInfoLayer.cpp
-)
+add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
 if (NOT DEFINED ENV{GEODE_SDK})
     message(FATAL_ERROR "Unable to find Geode SDK! Please define GEODE_SDK environment variable to point to Geode")

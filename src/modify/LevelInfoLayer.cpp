@@ -21,7 +21,7 @@ class $modify(CustomLevelInfoLayer, LevelInfoLayer) {
             return false;
         }
 
-        auto cache = horn::Manager::sharedManager()->getCache();
+        const auto& cache = horn::Manager::sharedManager()->getCache();
         m_fields->m_levelInfo = cache.getLevelInfo(level->m_levelID);
 
         if (m_fields->m_levelInfo) {
@@ -33,7 +33,7 @@ class $modify(CustomLevelInfoLayer, LevelInfoLayer) {
             addButton();
             updateButton();
 
-            static_cast<CustomGJDifficultySprite*>(m_difficultySprite)->decorateFromTier(tier);
+            static_cast<CustomGJDifficultySprite*>(m_difficultySprite)->decorate(tier, level->m_levelID);
         }
 
         return true;
@@ -82,11 +82,15 @@ class $modify(CustomLevelInfoLayer, LevelInfoLayer) {
             position.y -= 14.5f;
         }
 
+        auto* menu = cocos2d::CCMenu::create();
+        menu->ignoreAnchorPointForPosition(false);
+        menu->setContentSize({ 60.0f, 20.0f });
+        menu->setPosition(position);
+
         std::string text = fmt::format("UND T{}", tier);
-        auto* tierSprite = cocos2d::CCLabelBMFont::create(text.c_str(), "bigFont.fnt", 100.0f);
-        tierSprite->setPosition(position);
+        auto* tierSprite = cocos2d::CCLabelBMFont::create(text.c_str(), "bigFont.fnt");
         tierSprite->setScale(0.333f);
-        static cocos2d::ccColor3B colors[6] = {
+        static const cocos2d::ccColor3B colors[6] = {
             { 0x60, 0xff, 0xfe },
             { 0x5f, 0xfb, 0x3a },
             { 0xff, 0xfc, 0x42 },
@@ -97,9 +101,21 @@ class $modify(CustomLevelInfoLayer, LevelInfoLayer) {
         if (tier >= 0 && tier <= 6) {
             tierSprite->setColor(colors[tier - 1]);
         }
-        tierSprite->setID("und-tier-text"_spr);
 
-        addChild(tierSprite);
+        auto* tierButton = CCMenuItemSpriteExtra::create(
+            tierSprite,
+            this,
+            menu_selector(CustomLevelInfoLayer::onClickDifficulty)
+        );
+        tierButton->setPosition({
+            menu->getContentSize() / 2.0f
+        });
+        tierButton->setID("und-tier-text"_spr);
+
+        menu->addChild(tierButton);
+        menu->setID("und-difficulty-button2"_spr);
+
+        addChild(menu);
     }
 
     //! @brief Add difficulty button.
@@ -113,7 +129,7 @@ class $modify(CustomLevelInfoLayer, LevelInfoLayer) {
         m_fields->m_difficultyButton = CCMenuItemSpriteExtra::create(
             m_difficultySprite,
             this,
-            menu_selector(CustomLevelInfoLayer::onDifficulty)
+            menu_selector(CustomLevelInfoLayer::onClickDifficulty)
         );
         m_fields->m_difficultyButton->setPosition({
             menu->getContentSize() / 2.0f
@@ -134,7 +150,7 @@ class $modify(CustomLevelInfoLayer, LevelInfoLayer) {
     }
 
     //! @brief Difficulty button clicked callback.
-    void onDifficulty(cocos2d::CCObject* sender) {
+    void onClickDifficulty(cocos2d::CCObject* sender) {
         horn::Manager::sharedManager()->setHintShown(true);
 
         std::string body = fmt::format(

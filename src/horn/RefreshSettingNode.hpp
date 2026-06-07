@@ -45,9 +45,7 @@ private:
     void onCommit() override {}
     void onResetToDefault() override {}
 
-    cocos2d::CCSprite* m_buttonSprite;
     CCMenuItemSpriteExtra* m_button;
-    cocos2d::CCMenuItem* m_spinnerHolder;
     geode::LoadingSpinner* m_spinner;
 };
 
