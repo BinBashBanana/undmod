@@ -17,3 +17,4 @@ Underrated non-demons list integration.
 - OlyB (port/maintainer of v3.0.0+)
 - UND sheet maintainers (B6oy1004, Andorra, Fawxu, mawile, Patrick61804, Razzley, koobi, (formerly: CoolVLAD, helvetica, Hexagon, Abrubi))
 - Andorra (UND logo)
+- Shoutout to Gloriolus and dgfan for making the original in-game lists

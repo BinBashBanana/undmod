@@ -56,11 +56,13 @@ void UNDPopupBody::setActiveTab(UNDPopupTab tab) {
     m_tabRandomizer->setVisible(tab == UNDPopupTab::Randomizer);
 }
 
-void UNDPopupBody::openPackListFromCache(const std::vector<std::vector<int>>& levelLists, const std::string& name, cocos2d::ccColor3B color, bool sort) {
+void UNDPopupBody::openPackListFromCache(const std::vector<std::vector<int>>& levelLists, const std::string& name, cocos2d::ccColor3B color, LevelSortMode sort) {
     auto* list = cocos2d::CCArray::create();
     int indexCounter = 1;
     for (auto idList : levelLists) {
-        if (sort) {
+        if (sort == LevelSortMode::LevelID) {
+            std::sort(idList.begin(), idList.end());
+        } else if (sort == LevelSortMode::LevelName) {
             std::sort(idList.begin(), idList.end(), [this](const int& id1, const int& id2) {
                 auto level1 = m_gameLevelCache->find(id1);
                 auto level2 = m_gameLevelCache->find(id2);
@@ -95,7 +97,7 @@ void UNDPopupBody::openPackListFromCache(const std::vector<std::vector<int>>& le
     cocos2d::CCDirector::get()->pushScene(cocos2d::CCTransitionFade::create(0.5, scene));
 }
 
-void UNDPopupBody::openPackList(const std::vector<int>& levels, const std::vector<std::vector<int>>& levelLists, const std::string& name, cocos2d::ccColor3B color, bool sort) {
+void UNDPopupBody::openPackList(const std::vector<int>& levels, const std::vector<std::vector<int>>& levelLists, const std::string& name, cocos2d::ccColor3B color, LevelSortMode sort) {
     if (levels.size() == 0) {
         geode::Notification::create("No levels!", geode::NotificationIcon::Error, 1.0f)->show();
         return;
@@ -140,7 +142,7 @@ void UNDPopupBody::clickListTrigger(cocos2d::CCObject* sender) {
     std::vector<std::vector<int>> levelLists;
     std::string listName;
     cocos2d::ccColor3B listColor;
-    bool sort = true;
+    LevelSortMode sort = LevelSortMode::LevelName;
 
     if (target->m_isPack) {
         auto& pack = m_sortedPacks[target->m_index1];
@@ -148,15 +150,25 @@ void UNDPopupBody::clickListTrigger(cocos2d::CCObject* sender) {
         listColor = pack.color;
         levels = pack.levels;
         levelLists.emplace_back(levels);
-        sort = false;
+        sort = LevelSortMode::None;
     } else {
         int difficulty = target->m_index1;
         int tier = target->m_index2;
         listColor = tierColors[tier];
+        if (m_checkboxSortByID->isToggled()) {
+            sort = LevelSortMode::LevelID;
+        }
         if (tier == 6) {
             // all levels in difficulty
+            if (sort == LevelSortMode::LevelID) {
+                levelLists.emplace_back();
+            }
             for (int i = 0; i < 6; i++) {
-                levelLists.emplace_back(m_sortedLevels[difficulty][i]);
+                if (sort == LevelSortMode::LevelID) {
+                    levelLists[0].insert(levelLists[0].end(), m_sortedLevels[difficulty][i].begin(), m_sortedLevels[difficulty][i].end());
+                } else {
+                    levelLists.emplace_back(m_sortedLevels[difficulty][i]);
+                }
                 levels.insert(levels.end(), m_sortedLevels[difficulty][i].begin(), m_sortedLevels[difficulty][i].end());
             }
             // limit these to 300 levels
@@ -217,7 +229,7 @@ void UNDPopupBody::clickGoRandomizer(cocos2d::CCObject* sender) {
         levelLists.emplace_back(levels);
     }
 
-    const std::string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    static const std::string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
     std::string optionsEnc;
     optionsEnc.reserve(5);
@@ -234,7 +246,7 @@ void UNDPopupBody::clickGoRandomizer(cocos2d::CCObject* sender) {
         randomEnc.push_back(alphabet[randInt(rng)]);
     }
 
-    openPackList(levels, levelLists, fmt::format("UND Random {} {}", optionsEnc, randomEnc), { 80, 190, 255 }, true);
+    openPackList(levels, levelLists, fmt::format("UND Random {} {}", optionsEnc, randomEnc), { 80, 190, 255 }, LevelSortMode::LevelName);
 }
 
 void UNDPopupBody::openSheetInBrowser(cocos2d::CCObject* sender) {
@@ -426,6 +438,24 @@ void UNDPopupBody::initMainContent() {
         bar->setAnchorPoint({ 0.0f, 1.0f });
         bar->setPosition(0.0f, 5.0f);
         totalBox->addChild(bar);
+
+        // sort levels by ID checkbox
+        auto* checkboxMenu = cocos2d::CCMenu::create();
+        checkboxMenu->setContentSize({ 30.0f, 30.0f });
+        checkboxMenu->setPosition(272.0f, 35.0f);
+        m_tabAll->addChild(checkboxMenu);
+
+        m_checkboxSortByID = CCMenuItemToggler::createWithStandardSprites(this, nullptr, 0.6f);
+        m_checkboxSortByID->toggle(m_initialState.sortByID);
+        m_checkboxSortByID->setSizeMult(0.6f);
+        m_checkboxSortByID->setPosition(15.0f, 15.0f);
+        checkboxMenu->addChild(m_checkboxSortByID);
+
+        auto* labelSortByID = cocos2d::CCLabelBMFont::create("Sort levels by ID", "bigFont.fnt");
+        labelSortByID->setScale(0.36f);
+        labelSortByID->setAnchorPoint({ 0.0f, 0.5f });
+        labelSortByID->setPosition(302.0f, 50.0f);
+        m_tabAll->addChild(labelSortByID);
     }
 
     // Map Packs tab
@@ -503,16 +533,16 @@ void UNDPopupBody::initMainContent() {
                     }
 
                     // each pack
-                    auto* label = cocos2d::CCLabelBMFont::create(pack.c_str(), "chatFont.fnt");
-                    label->setScale(0.8f);
-                    label->setAnchorPoint({ 0.0f, 0.0f });
-                    label->setPosition(15.0f, 15.0f);
-
                     auto completedText = fmt::format("{}/{}", levelsCompleted, levelsTotal);
                     auto* completedSprite = cocos2d::CCLabelBMFont::create(completedText.c_str(), "chatFont.fnt");
                     completedSprite->setScale(0.8f);
                     completedSprite->setAnchorPoint({ 1.0f, 0.0f });
                     completedSprite->setPosition(185.0f, 15.0f);
+
+                    auto* label = cocos2d::CCLabelBMFont::create(pack.c_str(), "chatFont.fnt");
+                    label->limitLabelWidth(168.0f - completedSprite->getScaledContentWidth(), 0.8f, 0.4f);
+                    label->setAnchorPoint({ 0.0f, 0.0f });
+                    label->setPosition(15.0f, 15.0f);
 
                     auto* bar = ProgressBar::create(170.0f, 2.5f, color3Bto4F({ 90, 90, 90 }, 255), color3Bto4F(color, 255),
                         static_cast<float>(levelsCompleted) / levelsTotal
@@ -568,7 +598,7 @@ void UNDPopupBody::initMainContent() {
         auto* totalBox = cocos2d::CCNode::create();
         totalBox->setAnchorPoint({ 1.0f, 1.0f });
         totalBox->setContentSize({ 130.0f, 35.0f });
-        totalBox->setPosition(m_width - 10.0f, m_height);
+        totalBox->setPosition(m_width - 20.0f, m_height);
         m_tabPacks->addChild(totalBox);
 
         auto* totalLabel = cocos2d::CCLabelBMFont::create("Total pack levels complete:", "chatFont.fnt");
@@ -604,7 +634,7 @@ void UNDPopupBody::initMainContent() {
         auto* totalBox = cocos2d::CCNode::create();
         totalBox->setAnchorPoint({ 1.0f, 1.0f });
         totalBox->setContentSize({ 130.0f, 35.0f });
-        totalBox->setPosition(m_width - 10.0f, m_height - 50.0f);
+        totalBox->setPosition(m_width - 20.0f, m_height - 50.0f);
         m_tabPacks->addChild(totalBox);
 
         auto* totalLabel = cocos2d::CCLabelBMFont::create("Total packs complete:", "chatFont.fnt");
@@ -770,6 +800,9 @@ UNDPopupBodyState UNDPopupBody::getState() const {
         state.randomCount = m_randomCountSelector->getValue();
         state.uncompletedOnly = m_checkboxUncompleted->isToggled();
         state.equalSplit = m_checkboxEqualSplit->isToggled();
+    }
+    if (m_checkboxSortByID) {
+        state.sortByID = m_checkboxSortByID->isToggled();
     }
     return state;
 }

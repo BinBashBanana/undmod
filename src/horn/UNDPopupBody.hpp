@@ -23,6 +23,13 @@ enum class UNDPopupTab {
     Randomizer = 2
 };
 
+//! @brief How to sort a list of levels.
+enum class LevelSortMode {
+    None = 0,
+    LevelID = 1,
+    LevelName = 2
+};
+
 //! @brief Map pack information.
 struct UNDMapPack {
     std::string name;
@@ -40,6 +47,7 @@ struct UNDPopupBodyState {
     int randomCount = 50;
     bool uncompletedOnly = false;
     bool equalSplit = false;
+    bool sortByID = false;
 };
 
 //! @brief Main content of UND Popup window.
@@ -73,10 +81,10 @@ private:
     void initMainContent();
 
     //! @brief Open a pack list but download level info into cache first if necessary.
-    void openPackList(const std::vector<int>& levels, const std::vector<std::vector<int>>& levelLists, const std::string& name, cocos2d::ccColor3B color, bool sort);
+    void openPackList(const std::vector<int>& levels, const std::vector<std::vector<int>>& levelLists, const std::string& name, cocos2d::ccColor3B color, LevelSortMode sort);
 
     //! @brief Open a pack list using data from m_gameLevelCache.
-    void openPackListFromCache(const std::vector<std::vector<int>>& levelLists, const std::string& name, cocos2d::ccColor3B color, bool sort);
+    void openPackListFromCache(const std::vector<std::vector<int>>& levelLists, const std::string& name, cocos2d::ccColor3B color, LevelSortMode sort);
 
     //! @brief Click the refresh button to download sheet data.
     void clickRefresh(cocos2d::CCObject* sender);
@@ -101,6 +109,8 @@ private:
 
     CCMenuItemSpriteExtra* m_downloadButton;
     geode::LoadingSpinner* m_downloadSpinner;
+
+    CCMenuItemToggler* m_checkboxSortByID = nullptr;
 
     geode::ScrollLayer* m_scrollLayer = nullptr;
 

@@ -12,7 +12,7 @@ namespace horn {
     }
 }
 
-static const std::unordered_map<int, bool> easterEggLevels = {
+static const std::map<int, bool> easterEggLevels = {
     { 13518208, false },
     { 14031694, false },
     { 21354428, true }
