@@ -11,10 +11,12 @@
 #include <Geode/binding/GJSearchObject.hpp>
 #include <Geode/binding/FLAlertLayer.hpp>
 #include <Geode/ui/Notification.hpp>
+#include <Geode/ui/SimpleAxisLayout.hpp>
 
 #include "Manager.hpp"
 #include "LevelInfoDownloader.hpp"
 #include "EphemeralLevelListLayer.hpp"
+#include "VersionRangeSelectorPopup.hpp"
 #include "misc_nodes/ProgressBar.hpp"
 #include "misc_nodes/BoundedMenu.hpp"
 #include "misc_nodes/UNDMenuItem.hpp"
@@ -39,6 +41,29 @@ static const cocos2d::ccColor3B tierColors[7] = {
     { 0xf2, 0x0b, 0x1d },
     { 0xff, 0xff, 0xff },
     { 0xff, 0xff, 0xff }
+};
+
+#define CURRENT_GAME_VERSION_INDEX 12
+
+static const std::string updateNames[] = {
+    "1.0", "1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "2.0", "2.1", "2.2"
+};
+
+static const int versionMinimums[] = {
+    0,
+    1942,
+    10049,
+    63419,
+    121074,
+    184440,
+    420781,
+    827316,
+    1627371,
+    2810991,
+    11020438,
+    28356243,
+    97454812,
+    INT_MAX
 };
 
 static cocos2d::ccColor4F color3Bto4F(cocos2d::ccColor3B rgb, GLuint a) {
@@ -155,6 +180,12 @@ void UNDPopupBody::clickListTrigger(cocos2d::CCObject* sender) {
         int difficulty = target->m_index1;
         int tier = target->m_index2;
         listColor = tierColors[tier];
+        std::string versionText;
+        if (m_state.versionMin == m_state.versionMax) {
+            versionText = fmt::format(" {}", updateNames[m_state.versionMin]);
+        } else if (m_state.versionMin != 0 || m_state.versionMax != CURRENT_GAME_VERSION_INDEX) {
+            versionText = fmt::format(" {}-{}", updateNames[m_state.versionMin], updateNames[m_state.versionMax]);
+        }
         if (m_checkboxSortByID->isToggled()) {
             sort = LevelSortMode::LevelID;
         }
@@ -176,11 +207,11 @@ void UNDPopupBody::clickListTrigger(cocos2d::CCObject* sender) {
                 geode::Notification::create("Too many levels!", geode::NotificationIcon::Error, 1.0f)->show();
                 return;
             }
-            listName = fmt::format("All Underrated {}", difficultyNames[difficulty]);
+            listName = fmt::format("All Underrated {}{}", difficultyNames[difficulty], versionText);
         } else {
             levelLists.emplace_back(m_sortedLevels[difficulty][tier]);
             levels = m_sortedLevels[difficulty][tier];
-            listName = fmt::format("Tier {} Underrated {}", tier + 1, difficultyNames[difficulty]);
+            listName = fmt::format("Tier {} Underrated {}{}", tier + 1, difficultyNames[difficulty], versionText);
         }
     }
 
@@ -232,17 +263,20 @@ void UNDPopupBody::clickGoRandomizer(cocos2d::CCObject* sender) {
     static const std::string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
     std::string optionsEnc;
-    optionsEnc.reserve(5);
-    uint32_t options = (difficultyMin << 22) | (difficultyMax << 19) | (tierMin << 16) | (tierMax << 13) | (uncompletedOnly << 12) | (equalSplit << 11) | numToGenerate;
-    for (int i = 0; i < 5; i++) {
+    optionsEnc.reserve(6);
+    uint32_t options = (m_state.versionMin << 28) | (m_state.versionMax << 24) |
+                       (difficultyMin << 20) | (difficultyMax << 17) |
+                       (tierMin << 14) | (tierMax << 11) |
+                       (uncompletedOnly << 8) | (equalSplit << 7) | numToGenerate;
+    for (int i = 0; i < 6; i++) {
         optionsEnc.push_back(alphabet[options & 31]);
         options >>= 5;
     }
 
     std::string randomEnc;
-    randomEnc.reserve(8);
+    randomEnc.reserve(7);
     std::uniform_int_distribution<int> randInt(0, 31);
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 7; i++) {
         randomEnc.push_back(alphabet[randInt(rng)]);
     }
 
@@ -253,51 +287,51 @@ void UNDPopupBody::openSheetInBrowser(cocos2d::CCObject* sender) {
     geode::utils::web::openLinkInBrowser("https://docs.google.com/spreadsheets/d/1-Abvx7zXRAqpGFVbdTXpn6g1TRYp9WuZqW2pHWE7Dr4/view");
 }
 
-void UNDPopupBody::initMainContent() {
-    // spreadsheet link
-    auto* spreadsheetLinkBox = cocos2d::CCNode::create();
-    spreadsheetLinkBox->setAnchorPoint({ 1.0f, 0.0f });
-    spreadsheetLinkBox->setContentSize({ 130.0f, 15.0f });
-    spreadsheetLinkBox->setPosition(m_width - 10.0f, 10.0f);
-    addChild(spreadsheetLinkBox);
-    auto* sheetLinkSprite = cocos2d::CCLabelBMFont::create("Open sheet in browser", "chatFont.fnt");
-    sheetLinkSprite->setScale(0.8f);
-    sheetLinkSprite->setAnchorPoint({ 0.0f, 0.0f });
-    sheetLinkSprite->setPosition(0.0f, 1.5f);
-    sheetLinkSprite->setColor({ 0x3e, 0xc3, 0xf0 });
-    float sheetLinkWidth = sheetLinkSprite->getScaledContentWidth();
-    auto* sheetLinkMenu = cocos2d::CCMenu::create();
-    sheetLinkMenu->ignoreAnchorPointForPosition(false);
-    sheetLinkMenu->setAnchorPoint({ 0.5f, 0.0f });
-    sheetLinkMenu->setContentSize({ sheetLinkWidth, 15.0f });
-    sheetLinkMenu->setPosition(65.0f, 0.0f);
-    spreadsheetLinkBox->addChild(sheetLinkMenu);
-    auto* sheetLinkBtn = cocos2d::CCMenuItem::create(this, menu_selector(UNDPopupBody::openSheetInBrowser));
-    sheetLinkBtn->setAnchorPoint({ 0.0f, 0.0f });
-    sheetLinkBtn->setContentSize({ sheetLinkWidth, 15.0f });
-    sheetLinkMenu->addChild(sheetLinkBtn);
-    sheetLinkBtn->addChild(sheetLinkSprite);
-    auto* sheetLinkUnderline = ProgressBar::create(sheetLinkWidth, 0.5f, color3Bto4F({ 0x3e, 0xc3, 0xf0 }, 255), { 0.0f, 0.0f, 0.0f, 0.0f }, 0.0f);
-    sheetLinkUnderline->setAnchorPoint({ 0.5f, 0.0f });
-    sheetLinkUnderline->setPosition(65.0f, 2.0f);
-    spreadsheetLinkBox->addChild(sheetLinkUnderline);
+void UNDPopupBody::clickOpenVersionSelector(cocos2d::CCObject* sender) {
+    if (sender->getTag() == 1) {
+        m_state.versionMin = 0;
+        m_state.versionMax = CURRENT_GAME_VERSION_INDEX;
+        initAllTab();
+    } else {
+        VersionRangeSelectorPopup::create(updateNames, m_state.versionMin, m_state.versionMax, m_state.versionMin != m_state.versionMax, [this](int min, int max) {
+            m_state.versionMin = min;
+            m_state.versionMax = max;
+            initAllTab();
+        })->show();
+    }
+}
 
-    // prepare data
+void UNDPopupBody::initAllTab() {
     auto* stats = GameStatsManager::sharedState();
     auto* manager = Manager::sharedManager();
     const auto& levels = manager->getCache().getLevels();
-    const auto& packs = manager->getPacks();
-    int grandTotalLevelsTotal = levels.size();
+    int grandTotalLevelsTotal = 0;
     int grandTotalLevelsCompleted = 0;
+    bool modified = false;
 
+    m_tabAll->removeAllChildren();
+    m_sortedLevels = {};
+
+    // sort levels
     for (auto& [levelID, info] : levels) {
-        m_sortedLevels[static_cast<int>(info.difficulty())][info.tier() - 1].emplace_back(levelID);
-        bool completed = stats->hasCompletedOnlineLevel(levelID);
-        m_levelCompletion.emplace(levelID, completed);
-        grandTotalLevelsCompleted += completed;
+        if (levelID >= versionMinimums[m_state.versionMin] && levelID < versionMinimums[m_state.versionMax + 1]) {
+            m_sortedLevels[static_cast<int>(info.difficulty())][info.tier() - 1].emplace_back(levelID);
+            auto completedIter = m_levelCompletion.find(levelID);
+            bool completed;
+            if (completedIter == m_levelCompletion.end()) {
+                completed = stats->hasCompletedOnlineLevel(levelID);
+                m_levelCompletion.emplace(levelID, completed);
+            } else {
+                completed = completedIter->second;
+            }
+            grandTotalLevelsCompleted += completed;
+            grandTotalLevelsTotal++;
+        }
     }
 
-    // All Levels tab
+    if (m_state.versionMin != 0 || m_state.versionMax != CURRENT_GAME_VERSION_INDEX) {
+        modified = true;
+    }
 
     // left side labels
     for (float y : { 216.0f, 95.0f }) {
@@ -383,16 +417,22 @@ void UNDPopupBody::initMainContent() {
                 auto* spriteRight = cocos2d::CCLabelBMFont::create(textRight.c_str(), "chatFont.fnt");
                 spriteRight->setScale(0.5f);
                 spriteRight->setAnchorPoint({ 1.0f, 1.0f });
-                spriteRight->setPosition(65.0f, 14.0f);
+                spriteRight->setPosition(modified ? 67.0f : 65.0f, 14.0f);
                 clickTarget->addChild(spriteRight);
+                if (modified) {
+                    spriteRight->setSkewX(15.0f);
+                }
             } else {
                 textLeft = "N/A";
             }
             auto* spriteLeft = cocos2d::CCLabelBMFont::create(textLeft.c_str(), "chatFont.fnt");
             spriteLeft->setScale(0.5f);
             spriteLeft->setAnchorPoint({ 0.0f, 1.0f });
-            spriteLeft->setPosition(0.0f, 14.0f);
+            spriteLeft->setPosition(modified ? 2.0f : 0.0f, 14.0f);
             clickTarget->addChild(spriteLeft);
+            if (modified) {
+                spriteLeft->setSkewX(15.0f);
+            }
 
             // progress bar
             auto* bar = ProgressBar::create(65.0f, 2.5f, color3Bto4F({ 90, 90, 90 }, 255), color3Bto4F(tierColors[tier], 255),
@@ -415,29 +455,99 @@ void UNDPopupBody::initMainContent() {
         auto* totalLabel = cocos2d::CCLabelBMFont::create("Total list levels complete:", "chatFont.fnt");
         totalLabel->setScale(0.8f);
         totalLabel->setAnchorPoint({ 0.5f, 1.0f });
-        totalLabel->setPosition({ 65.0f, 35.0f });
+        totalLabel->setPosition(modified ? 67.0f : 65.0f, 35.0f);
         totalBox->addChild(totalLabel);
+        if (modified) {
+            totalLabel->setSkewX(15.0f);
+        }
 
         auto textLeft = fmt::format("{}/{}", grandTotalLevelsCompleted, grandTotalLevelsTotal);
         auto* spriteLeft = cocos2d::CCLabelBMFont::create(textLeft.c_str(), "chatFont.fnt");
         spriteLeft->setScale(0.6f);
         spriteLeft->setAnchorPoint({ 0.0f, 1.0f });
-        spriteLeft->setPosition(0.0f, 17.0f);
+        spriteLeft->setPosition(modified ? 2.0f : 0.0f, 17.0f);
         totalBox->addChild(spriteLeft);
+        if (modified) {
+            spriteLeft->setSkewX(15.0f);
+        }
 
-        auto textRight = fmt::format("{}%", grandTotalLevelsCompleted * 100 / grandTotalLevelsTotal); // floor
+        auto textRight = fmt::format("{}%", grandTotalLevelsTotal ? (grandTotalLevelsCompleted * 100 / grandTotalLevelsTotal) : 0.0f); // floor
         auto* spriteRight = cocos2d::CCLabelBMFont::create(textRight.c_str(), "chatFont.fnt");
         spriteRight->setScale(0.6f);
         spriteRight->setAnchorPoint({ 1.0f, 1.0f });
-        spriteRight->setPosition(130.0f, 17.0f);
+        spriteRight->setPosition(modified ? 132.0f : 130.0f, 17.0f);
         totalBox->addChild(spriteRight);
+        if (modified) {
+            spriteRight->setSkewX(15.0f);
+        }
 
         auto* bar = ProgressBar::create(130.0f, 5.0f, color3Bto4F({ 90, 90, 90 }, 255), color3Bto4F({ 255, 255, 255 }, 255),
-            static_cast<float>(grandTotalLevelsCompleted) / grandTotalLevelsTotal
+            grandTotalLevelsTotal ? (static_cast<float>(grandTotalLevelsCompleted) / grandTotalLevelsTotal) : 0.0f
         );
         bar->setAnchorPoint({ 0.0f, 1.0f });
         bar->setPosition(0.0f, 5.0f);
         totalBox->addChild(bar);
+
+        // level versions
+        std::string versionText;
+        std::string versionText2;
+        if (modified) {
+            if (m_state.versionMin == m_state.versionMax) {
+                versionText  = fmt::format("Only showing\n{} levels", updateNames[m_state.versionMin]);
+                versionText2 = fmt::format("Game version: {}", updateNames[m_state.versionMin]);
+            } else {
+                versionText  = fmt::format("Only showing\n{}-{} levels", updateNames[m_state.versionMin], updateNames[m_state.versionMax]);
+                versionText2 = fmt::format("Game version: {}-{}", updateNames[m_state.versionMin], updateNames[m_state.versionMax]);
+            }
+        } else {
+            versionText  = "Showing all\nlist levels";
+            versionText2 = "Game version: All";
+        }
+        auto* versionSprite = cocos2d::CCLabelBMFont::create(versionText.c_str(), "bigFont.fnt", 0.0f, cocos2d::CCTextAlignment::kCCTextAlignmentCenter);
+        versionSprite->setScale(0.5f);
+        versionSprite->setPosition(345.0f, 150.0f);
+        m_tabAll->addChild(versionSprite);
+
+        auto* versionButtonMenu = cocos2d::CCMenu::create();
+        versionButtonMenu->ignoreAnchorPointForPosition(false);
+        versionButtonMenu->setContentSize({ 140.0f, 24.0f });
+        versionButtonMenu->setPosition(345.0f, 115.0f);
+        m_tabAll->addChild(versionButtonMenu);
+
+        auto* versionButtonSprite = ButtonSprite::create("Edit", 0.0f, false, "goldFont.fnt", "GJ_button_01.png", 0.0f, 0.8f);
+        versionButtonSprite->setScale(0.75f);
+        auto* versionButton = CCMenuItemSpriteExtra::create(
+            versionButtonSprite,
+            this,
+            menu_selector(UNDPopupBody::clickOpenVersionSelector)
+        );
+        versionButton->setSizeMult(1.2f);
+        versionButtonMenu->addChild(versionButton);
+
+        if (modified) {
+            auto* resetButtonSprite = ButtonSprite::create("Reset", 0.0f, false, "goldFont.fnt", "GJ_button_01.png", 0.0f, 0.8f);
+            resetButtonSprite->setScale(0.75f);
+            auto* resetButton = CCMenuItemSpriteExtra::create(
+                resetButtonSprite,
+                this,
+                menu_selector(UNDPopupBody::clickOpenVersionSelector)
+            );
+            resetButton->setSizeMult(1.2f);
+            resetButton->setTag(1);
+            versionButtonMenu->addChild(resetButton);
+        }
+
+        versionButtonMenu->setLayout(geode::SimpleRowLayout::create()->setGap(8.0f));
+
+        // also update the text in the randomizer tab
+        if (m_randomizerGameVersion) {
+            m_randomizerGameVersion->removeFromParent();
+        }
+        m_randomizerGameVersion = cocos2d::CCLabelBMFont::create(versionText2.c_str(), "bigFont.fnt");
+        m_randomizerGameVersion->setScale(0.4f);
+        m_randomizerGameVersion->setAnchorPoint({ 1.0f, 0.5f });
+        m_randomizerGameVersion->setPosition(360.0f, 215.0f);
+        m_tabRandomizer->addChild(m_randomizerGameVersion);
 
         // sort levels by ID checkbox
         auto* checkboxMenu = cocos2d::CCMenu::create();
@@ -446,7 +556,7 @@ void UNDPopupBody::initMainContent() {
         m_tabAll->addChild(checkboxMenu);
 
         m_checkboxSortByID = CCMenuItemToggler::createWithStandardSprites(this, nullptr, 0.6f);
-        m_checkboxSortByID->toggle(m_initialState.sortByID);
+        m_checkboxSortByID->toggle(m_state.sortByID);
         m_checkboxSortByID->setSizeMult(0.6f);
         m_checkboxSortByID->setPosition(15.0f, 15.0f);
         checkboxMenu->addChild(m_checkboxSortByID);
@@ -457,6 +567,44 @@ void UNDPopupBody::initMainContent() {
         labelSortByID->setPosition(302.0f, 50.0f);
         m_tabAll->addChild(labelSortByID);
     }
+}
+
+void UNDPopupBody::initMainContent() {
+    // spreadsheet link
+    auto* spreadsheetLinkBox = cocos2d::CCNode::create();
+    spreadsheetLinkBox->setAnchorPoint({ 1.0f, 0.0f });
+    spreadsheetLinkBox->setContentSize({ 130.0f, 15.0f });
+    spreadsheetLinkBox->setPosition(m_width - 10.0f, 10.0f);
+    addChild(spreadsheetLinkBox);
+    auto* sheetLinkSprite = cocos2d::CCLabelBMFont::create("Open sheet in browser", "chatFont.fnt");
+    sheetLinkSprite->setScale(0.8f);
+    sheetLinkSprite->setAnchorPoint({ 0.0f, 0.0f });
+    sheetLinkSprite->setPosition(0.0f, 1.5f);
+    sheetLinkSprite->setColor({ 0x3e, 0xc3, 0xf0 });
+    float sheetLinkWidth = sheetLinkSprite->getScaledContentWidth();
+    auto* sheetLinkMenu = cocos2d::CCMenu::create();
+    sheetLinkMenu->ignoreAnchorPointForPosition(false);
+    sheetLinkMenu->setAnchorPoint({ 0.5f, 0.0f });
+    sheetLinkMenu->setContentSize({ sheetLinkWidth, 15.0f });
+    sheetLinkMenu->setPosition(65.0f, 0.0f);
+    spreadsheetLinkBox->addChild(sheetLinkMenu);
+    auto* sheetLinkBtn = cocos2d::CCMenuItem::create(this, menu_selector(UNDPopupBody::openSheetInBrowser));
+    sheetLinkBtn->setAnchorPoint({ 0.0f, 0.0f });
+    sheetLinkBtn->setContentSize({ sheetLinkWidth, 15.0f });
+    sheetLinkMenu->addChild(sheetLinkBtn);
+    sheetLinkBtn->addChild(sheetLinkSprite);
+    auto* sheetLinkUnderline = ProgressBar::create(sheetLinkWidth, 0.5f, color3Bto4F({ 0x3e, 0xc3, 0xf0 }, 255), { 0.0f, 0.0f, 0.0f, 0.0f }, 0.0f);
+    sheetLinkUnderline->setAnchorPoint({ 0.5f, 0.0f });
+    sheetLinkUnderline->setPosition(65.0f, 2.0f);
+    spreadsheetLinkBox->addChild(sheetLinkUnderline);
+
+    // prepare data
+    auto* stats = GameStatsManager::sharedState();
+    auto* manager = Manager::sharedManager();
+    const auto& packs = manager->getPacks();
+
+    // All Levels tab
+    initAllTab();
 
     // Map Packs tab
 
@@ -580,8 +728,8 @@ void UNDPopupBody::initMainContent() {
         mapPacksTotal = packIndex;
 
         m_scrollLayer->m_contentLayer->setLayout(geode::ScrollLayer::createDefaultListLayout(0.0f));
-        if (m_initialState.scrollHeight != -1.0f) {
-            m_scrollLayer->m_contentLayer->setPositionY(m_initialState.scrollHeight);
+        if (m_state.scrollHeight != -1.0f) {
+            m_scrollLayer->m_contentLayer->setPositionY(m_state.scrollHeight);
         } else {
             m_scrollLayer->scrollToTop();
         }
@@ -672,7 +820,7 @@ void UNDPopupBody::initMainContent() {
         difficultyMinLabel->setScale(0.4f);
         difficultyMinLabel->setPosition(100.0f, 215.0f);
         m_tabRandomizer->addChild(difficultyMinLabel);
-        m_difficultyMinSelector = LRSelectorEnum::create(difficultyNames, m_initialState.difficultyMin, false, [this](int newValue) {
+        m_difficultyMinSelector = LRSelectorEnum::create(difficultyNames, m_state.difficultyMin, false, [this](int newValue) {
             if (newValue > m_difficultyMaxSelector->getValue()) {
                 m_difficultyMaxSelector->setValue(newValue, false);
             }
@@ -685,7 +833,7 @@ void UNDPopupBody::initMainContent() {
         difficultyMaxLabel->setScale(0.4f);
         difficultyMaxLabel->setPosition(100.0f, 155.0f);
         m_tabRandomizer->addChild(difficultyMaxLabel);
-        m_difficultyMaxSelector = LRSelectorEnum::create(difficultyNames, m_initialState.difficultyMax, false, [this](int newValue) {
+        m_difficultyMaxSelector = LRSelectorEnum::create(difficultyNames, m_state.difficultyMax, false, [this](int newValue) {
             if (newValue < m_difficultyMinSelector->getValue()) {
                 m_difficultyMinSelector->setValue(newValue, false);
             }
@@ -698,7 +846,7 @@ void UNDPopupBody::initMainContent() {
         tierMinLabel->setScale(0.4f);
         tierMinLabel->setPosition(50.0f, 95.0f);
         m_tabRandomizer->addChild(tierMinLabel);
-        m_tierMinSelector = LRSelectorInt::create(1, 5, m_initialState.tierMin, 1, false, false, false, [this](int newValue) {
+        m_tierMinSelector = LRSelectorInt::create(1, 5, m_state.tierMin, 1, false, false, false, [this](int newValue) {
             if (newValue > m_tierMaxSelector->getValue()) {
                 m_tierMaxSelector->setValue(newValue, false);
             }
@@ -711,7 +859,7 @@ void UNDPopupBody::initMainContent() {
         tierMaxLabel->setScale(0.4f);
         tierMaxLabel->setPosition(150.0f, 95.0f);
         m_tabRandomizer->addChild(tierMaxLabel);
-        m_tierMaxSelector = LRSelectorInt::create(1, 5, m_initialState.tierMax, 1, false, false, false, [this](int newValue) {
+        m_tierMaxSelector = LRSelectorInt::create(1, 5, m_state.tierMax, 1, false, false, false, [this](int newValue) {
             if (newValue < m_tierMinSelector->getValue()) {
                 m_tierMinSelector->setValue(newValue, false);
             }
@@ -724,37 +872,55 @@ void UNDPopupBody::initMainContent() {
         randomCountLabel->setScale(0.4f);
         randomCountLabel->setPosition(300.0f, 95.0f);
         m_tabRandomizer->addChild(randomCountLabel);
-        m_randomCountSelector = LRSelectorInt::create(1, 100, m_initialState.randomCount, 1, true, true, true, nullptr, 60.0f);
+        m_randomCountSelector = LRSelectorInt::create(1, 100, m_state.randomCount, 1, true, true, true, nullptr, 60.0f);
         m_randomCountSelector->setPosition(300.0f, 70.0f);
         m_tabRandomizer->addChild(m_randomCountSelector);
 
         auto* checkboxMenu = cocos2d::CCMenu::create();
-        checkboxMenu->setContentSize({ 30.0f, 90.0f });
-        checkboxMenu->setPosition(250.0f, 115.0f);
+        checkboxMenu->setContentSize({ 30.0f, 80.0f });
+        checkboxMenu->setPosition(240.0f, 115.0f);
         m_tabRandomizer->addChild(checkboxMenu);
 
         m_checkboxUncompleted = CCMenuItemToggler::createWithStandardSprites(this, nullptr, 1.0f);
-        m_checkboxUncompleted->toggle(m_initialState.uncompletedOnly);
+        m_checkboxUncompleted->toggle(m_state.uncompletedOnly);
         m_checkboxUncompleted->setSizeMult(1.2f);
-        m_checkboxUncompleted->setPosition(15.0f, 75.0f);
+        m_checkboxUncompleted->setPosition(15.0f, 65.0f);
         checkboxMenu->addChild(m_checkboxUncompleted);
         auto* labelUncompleted = cocos2d::CCLabelBMFont::create("Uncompleted only", "bigFont.fnt");
         labelUncompleted->setScale(0.4f);
         labelUncompleted->setAnchorPoint({ 0.0f, 0.5f });
-        labelUncompleted->setPosition(290.0f, 190.0f);
+        labelUncompleted->setPosition(280.0f, 180.0f);
         m_tabRandomizer->addChild(labelUncompleted);
 
         m_checkboxEqualSplit = CCMenuItemToggler::createWithStandardSprites(this, menu_selector(UNDPopupBody::clickEqualSplit), 1.0f);
-        m_checkboxEqualSplit->toggle(m_initialState.equalSplit);
+        m_checkboxEqualSplit->toggle(m_state.equalSplit);
         m_checkboxEqualSplit->setSizeMult(1.2f);
         m_checkboxEqualSplit->setPosition(15.0f, 15.0f);
         checkboxMenu->addChild(m_checkboxEqualSplit);
-        updateRandomizerCountStep(m_initialState.equalSplit);
+        updateRandomizerCountStep(m_state.equalSplit);
         auto* labelEqualSplit = cocos2d::CCLabelBMFont::create("Equal split", "bigFont.fnt");
         labelEqualSplit->setScale(0.4f);
         labelEqualSplit->setAnchorPoint({ 0.0f, 0.5f });
-        labelEqualSplit->setPosition(290.0f, 130.0f);
+        labelEqualSplit->setPosition(280.0f, 130.0f);
         m_tabRandomizer->addChild(labelEqualSplit);
+
+        auto* versionButtonMenu = cocos2d::CCMenu::create();
+        versionButtonMenu->ignoreAnchorPointForPosition(false);
+        versionButtonMenu->setAnchorPoint({ 0.0f, 0.5f });
+        versionButtonMenu->setPosition(370.0f, 215.0f);
+        m_tabRandomizer->addChild(versionButtonMenu);
+
+        auto* versionButtonSprite = ButtonSprite::create("Edit", 0.0f, false, "goldFont.fnt", "GJ_button_01.png", 0.0f, 0.8f);
+        versionButtonSprite->setScale(0.6f);
+        auto* versionButton = CCMenuItemSpriteExtra::create(
+            versionButtonSprite,
+            this,
+            menu_selector(UNDPopupBody::clickOpenVersionSelector)
+        );
+        versionButton->setSizeMult(1.2f);
+        versionButton->setPosition(versionButton->getContentSize() / 2.0f);
+        versionButtonMenu->setContentSize(versionButton->getContentSize());
+        versionButtonMenu->addChild(versionButton);
 
         auto* goMenu = cocos2d::CCMenu::create();
         goMenu->ignoreAnchorPointForPosition(false);
@@ -804,6 +970,8 @@ UNDPopupBodyState UNDPopupBody::getState() const {
     if (m_checkboxSortByID) {
         state.sortByID = m_checkboxSortByID->isToggled();
     }
+    state.versionMin = m_state.versionMin;
+    state.versionMax = m_state.versionMax;
     return state;
 }
 
@@ -813,10 +981,8 @@ void UNDPopupBody::clickRefresh(cocos2d::CCObject* sender) {
 
     Manager::sharedManager()->download(
         [this] {
-            m_downloadSpinner->setVisible(false);
-            m_downloadButton->setVisible(true);
-
             m_downloadTabActive = false;
+            m_tabDownload->removeAllChildren();
             setActiveTab(m_activeTab);
             initMainContent();
         },
@@ -841,7 +1007,7 @@ bool UNDPopupBody::init(float width, float height, const UNDPopupBodyState& stat
     setContentSize({ width, height });
     m_width = width;
     m_height = height;
-    m_initialState = state;
+    m_state = state;
 
     // tab roots
     m_tabDownload = cocos2d::CCNode::create();
@@ -861,8 +1027,8 @@ bool UNDPopupBody::init(float width, float height, const UNDPopupBodyState& stat
     m_tabRandomizer->setContentSize({ width, height });
     addChild(m_tabRandomizer);
 
-    // Download tab for if the sheet data is somehow missing
-    {
+    if (Manager::sharedManager()->getCache().getLevels().size() == 0) {
+        // Download tab for if the sheet data is somehow missing
         auto* textSprite = cocos2d::CCLabelBMFont::create("Sheet data is missing!", "bigFont.fnt");
         textSprite->setScale(0.8f);
         textSprite->setPosition(width / 2.0f, height / 2.0f + 15.0f);
@@ -891,9 +1057,6 @@ bool UNDPopupBody::init(float width, float height, const UNDPopupBodyState& stat
         m_downloadSpinner->setPosition(pos);
         m_downloadSpinner->setVisible(false);
         m_tabDownload->addChild(m_downloadSpinner);
-    }
-
-    if (Manager::sharedManager()->getCache().getLevels().size() == 0) {
         m_downloadTabActive = true;
     } else {
         initMainContent();

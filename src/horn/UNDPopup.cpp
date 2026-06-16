@@ -60,7 +60,7 @@ void UNDPopup::onExit() {
 }
 
 bool UNDPopup::init() {
-    if (!Popup::init(440, 280, "GJ_square05.png")) {
+    if (!Popup::init(440.0f, 280.0f, "GJ_square05.png")) {
         return false;
     }
 

@@ -10,7 +10,7 @@ namespace horn {
 //! @brief Form node with a left and right button (enum version).
 class LRSelectorEnum : public LRSelector<int> {
 public:
-    static LRSelectorEnum* create(const std::span<const std::string> names, int initial, bool wrap, const std::function<void(int)>& onChange, float boxWidth = 80.0f) {
+    static LRSelectorEnum* create(const std::span<const std::string>& names, int initial, bool wrap, const std::function<void(int)>& onChange, float boxWidth = 80.0f) {
         auto ret = new LRSelectorEnum();
         if (ret->init(names, initial, wrap, onChange, boxWidth)) {
             ret->autorelease();

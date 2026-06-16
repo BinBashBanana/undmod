@@ -40,6 +40,8 @@ struct UNDMapPack {
 //! @brief Represents the state of all the form elements in UNDPopupBody.
 struct UNDPopupBodyState {
     float scrollHeight = -1.0f;
+    int versionMin = 0;
+    int versionMax = 12;
     int difficultyMin = 0;
     int difficultyMax = 5;
     int tierMin = 1;
@@ -80,6 +82,9 @@ private:
     //! @brief Populate main body contents.
     void initMainContent();
 
+    //! @brief Populate (or re-create) the "All Levels" tab. This will also refresh m_sortedLevels.
+    void initAllTab();
+
     //! @brief Open a pack list but download level info into cache first if necessary.
     void openPackList(const std::vector<int>& levels, const std::vector<std::vector<int>>& levelLists, const std::string& name, cocos2d::ccColor3B color, LevelSortMode sort);
 
@@ -93,6 +98,7 @@ private:
     void clickListTrigger(cocos2d::CCObject* sender);
     void clickEqualSplit(cocos2d::CCObject* sender);
     void clickGoRandomizer(cocos2d::CCObject* sender);
+    void clickOpenVersionSelector(cocos2d::CCObject* sender);
 
     //! @brief Update the step value of m_randomCountSelector based on the value of the randomizer form elements.
     void updateRandomizerCountStep(bool enabled);
@@ -100,7 +106,7 @@ private:
     float m_width;
     float m_height;
 
-    bool m_downloadTabActive;
+    bool m_downloadTabActive = false;
     UNDPopupTab m_activeTab;
     cocos2d::CCNode* m_tabDownload;
     cocos2d::CCNode* m_tabAll;
@@ -121,13 +127,14 @@ private:
     LRSelectorInt* m_randomCountSelector = nullptr;
     CCMenuItemToggler* m_checkboxUncompleted = nullptr;
     CCMenuItemToggler* m_checkboxEqualSplit = nullptr;
+    cocos2d::CCLabelBMFont* m_randomizerGameVersion = nullptr;
 
     // difficulty -> tier -> levels
     std::array<std::array<std::vector<int>, 6>, 6> m_sortedLevels;
     std::unordered_map<int, bool> m_levelCompletion;
     std::vector<UNDMapPack> m_sortedPacks;
 
-    UNDPopupBodyState m_initialState;
+    UNDPopupBodyState m_state;
 };
 
 }

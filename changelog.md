@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.1.2
+
+- Add option to filter levels by game version (tier lists and randomizer)
+
 ## v3.1.1
 
 - Add option to sort lists by level ID
