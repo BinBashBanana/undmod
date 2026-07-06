@@ -2,6 +2,7 @@
 
 ## v3.1.3
 
+- Adjust bar color
 - Update map packs
 
 ## v3.1.2

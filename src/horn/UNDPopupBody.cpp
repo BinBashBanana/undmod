@@ -435,7 +435,7 @@ void UNDPopupBody::initAllTab() {
             }
 
             // progress bar
-            auto* bar = ProgressBar::create(65.0f, 2.5f, color3Bto4F({ 90, 90, 90 }, 255), color3Bto4F(tierColors[tier], 255),
+            auto* bar = ProgressBar::create(65.0f, 2.5f, levelsTotal ? color3Bto4F({ 90, 90, 90 }, 255) : color3Bto4F({ 65, 65, 65 }, 255), color3Bto4F(tierColors[tier], 255),
                 levelsCompleted ? static_cast<float>(levelsCompleted) / levelsTotal : 0.0f
             );
             bar->setAnchorPoint({ 0.0f, 0.0f });
