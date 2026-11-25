@@ -2,14 +2,13 @@
 
 #include <Geode/utils/general.hpp>
 #include <Geode/ui/TextInput.hpp>
-#include <Geode/binding/TextInputDelegate.hpp>
 
 #include "LRSelector.hpp"
 
 namespace horn {
 
 //! @brief Form node with a left and right button (int version, optionally editable with keyboard).
-class LRSelectorInt : public LRSelector<int>, public TextInputDelegate {
+class LRSelectorInt : public LRSelector<int> {
 public:
     static LRSelectorInt* create(int min, int max, int initial, int step, bool enforceStep, bool wrap, bool enableTyping, const std::function<void(int)>& onChange, float boxWidth = 40.0f) {
         auto ret = new LRSelectorInt();
@@ -38,7 +37,7 @@ public:
 private:
     bool init(int min, int max, int initial, int step, bool enforceStep, bool wrap, bool enableTyping, const std::function<void(int)>& onChange, float boxWidth);
     void onClickArrow(cocos2d::CCObject* sender) override;
-    void textInputClosed(CCTextInputNode* input) override;
+    void textInputClosed();
     int roundToStep(int base);
 
     geode::TextInput* m_textInput;

@@ -14,6 +14,7 @@
 #include <Geode/ui/Scrollbar.hpp>
 #include <Geode/ui/General.hpp>
 #include <Geode/loader/Mod.hpp>
+#include <Geode/cocos/layers_scenes_transitions_nodes/CCTransition.h>
 
 namespace horn {
 
@@ -149,7 +150,7 @@ void EphemeralLevelListLayer::onEnter() {
 
     // the scrollbar is unnecessary when there's less than 5, and buggy when there's exactly 5???
     if (levelsTotal > 5) {
-        auto* scrollBar = geode::Scrollbar::create(static_cast<CCScrollLayerExt*>(listView->m_tableView));
+        auto* scrollBar = geode::Scrollbar::create(static_cast<CCScrollLayerExt*>(listView->m_tableView), geode::Scrollbar::Style::Geode);
         scrollBar->setAnchorPoint({ 0.0f, 0.5f });
         scrollBar->setPosition(windowSize.width / 2.0f + 193.5f, windowSize.height / 2.0f - 5.0f);
         scrollBar->setID("scrollbar"_spr);

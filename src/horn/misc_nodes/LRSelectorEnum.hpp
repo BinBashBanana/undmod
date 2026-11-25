@@ -2,6 +2,7 @@
 
 #include <span>
 #include <Geode/utils/general.hpp>
+#include <Geode/cocos/label_nodes/CCLabelBMFont.h>
 
 #include "LRSelector.hpp"
 

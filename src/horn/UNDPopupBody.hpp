@@ -97,6 +97,7 @@ private:
     void openSheetInBrowser(cocos2d::CCObject* sender);
     void clickListTrigger(cocos2d::CCObject* sender);
     void clickEqualSplit(cocos2d::CCObject* sender);
+    void clickSortByID(cocos2d::CCObject* sender);
     void clickGoRandomizer(cocos2d::CCObject* sender);
     void clickOpenVersionSelector(cocos2d::CCObject* sender);
 

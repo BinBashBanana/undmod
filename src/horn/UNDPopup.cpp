@@ -1,6 +1,7 @@
 #include "UNDPopup.hpp"
 
-#include <Geode/loader/Log.hpp>
+#include <Geode/loader/Mod.hpp>
+#include <Geode/cocos/extensions/GUI/CCControlExtension/CCScale9Sprite.h>
 
 namespace horn {
 
@@ -122,6 +123,8 @@ bool UNDPopup::init() {
     m_btnTabRandomizer->setSizeMult(1.2f);
     m_btnTabRandomizer->setPosition(202.5f, 15.0f);
     btnMenu->addChild(m_btnTabRandomizer);
+
+    m_bodyState.sortByID = geode::Mod::get()->getSavedValue<bool>("sort-levels-by-id", false);
 
     clickTabAll(nullptr);
 

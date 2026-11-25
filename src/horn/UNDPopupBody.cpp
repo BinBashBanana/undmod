@@ -3,6 +3,7 @@
 #include <random>
 #include <ranges>
 
+#include <Geode/loader/Mod.hpp>
 #include <Geode/utils/cocos.hpp>
 #include <Geode/utils/web.hpp>
 #include <Geode/binding/ButtonSprite.hpp>
@@ -12,6 +13,7 @@
 #include <Geode/binding/FLAlertLayer.hpp>
 #include <Geode/ui/Notification.hpp>
 #include <Geode/ui/SimpleAxisLayout.hpp>
+#include <Geode/cocos/layers_scenes_transitions_nodes/CCTransition.h>
 
 #include "Manager.hpp"
 #include "LevelInfoDownloader.hpp"
@@ -555,7 +557,7 @@ void UNDPopupBody::initAllTab() {
         checkboxMenu->setPosition(272.0f, 35.0f);
         m_tabAll->addChild(checkboxMenu);
 
-        m_checkboxSortByID = CCMenuItemToggler::createWithStandardSprites(this, nullptr, 0.6f);
+        m_checkboxSortByID = CCMenuItemToggler::createWithStandardSprites(this, menu_selector(UNDPopupBody::clickSortByID), 0.6f);
         m_checkboxSortByID->toggle(m_state.sortByID);
         m_checkboxSortByID->setSizeMult(0.6f);
         m_checkboxSortByID->setPosition(15.0f, 15.0f);
@@ -734,7 +736,7 @@ void UNDPopupBody::initMainContent() {
             m_scrollLayer->scrollToTop();
         }
 
-        auto* scrollBar = ScrollbarFix::create(m_scrollLayer);
+        auto* scrollBar = ScrollbarFix::create(m_scrollLayer, geode::Scrollbar::Style::Geode);
         scrollBar->setAnchorPoint({ 0.0f, 0.0f });
         scrollBar->setContentSize({ 8.0f, m_height });
         scrollBar->setPosition(232.0f, 0.0f);
@@ -951,6 +953,12 @@ void UNDPopupBody::updateRandomizerCountStep(bool enabled) {
 void UNDPopupBody::clickEqualSplit(cocos2d::CCObject* sender) {
     auto* target = static_cast<CCMenuItemToggler*>(sender);
     updateRandomizerCountStep(!target->isToggled());
+}
+
+void UNDPopupBody::clickSortByID(cocos2d::CCObject* sender) {
+    auto* target = static_cast<CCMenuItemToggler*>(sender);
+    m_state.sortByID = !target->isToggled();
+    geode::Mod::get()->setSavedValue<bool>("sort-levels-by-id", m_state.sortByID);
 }
 
 UNDPopupBodyState UNDPopupBody::getState() const {

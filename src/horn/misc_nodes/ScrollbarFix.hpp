@@ -8,9 +8,9 @@ namespace horn {
 //! @brief Bugfixed geode::Scrollbar.
 class ScrollbarFix : public geode::Scrollbar {
 public:
-    static ScrollbarFix* create(CCScrollLayerExt* list) {
+    static ScrollbarFix* create(CCScrollLayerExt* list, geode::Scrollbar::Style style) {
         auto ret = new ScrollbarFix();
-        if (ret->init(list)) {
+        if (ret->init(list, style)) {
             ret->autorelease();
             return ret;
         }

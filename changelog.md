@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.1.4
+
+- Remember "Sort levels by ID" value
+- Update to Geode 6.0.0 (GD 2.2091)
+
 ## v3.1.3
 
 - Adjust bar color

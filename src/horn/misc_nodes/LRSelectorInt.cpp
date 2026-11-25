@@ -53,13 +53,18 @@ bool LRSelectorInt::init(int min, int max, int initial, int step, bool enforceSt
     m_textInput = geode::TextInput::create(boxWidth, "", "bigFont.fnt");
     m_textInput->hideBG();
     m_textInput->setPosition(boxWidth / 2.0f + 20.0f, 15.0f);
+    m_textInput->setNumericMode(true);
     m_textInput->setCommonFilter(geode::CommonFilter::Int);
     m_textInput->setMaxCharCount(11);
     m_textInput->setString(geode::utils::numToString<int>(initial), false);
-    m_textInput->setDelegate(this);
+    m_textInput->setFocusCallback([this](geode::TextInput::FocusState state) {
+        if (state == geode::TextInput::FocusState::Unfocused) {
+            textInputClosed();
+        }
+    });
     addChild(m_textInput);
     if (!enableTyping) {
-        m_textInput->getInputNode()->setTouchEnabled(false);
+        m_textInput->setEnabled(false);
     }
 
     return true;
@@ -85,10 +90,10 @@ void LRSelectorInt::onClickArrow(cocos2d::CCObject* sender) {
     }
 }
 
-void LRSelectorInt::textInputClosed(CCTextInputNode* input) {
+void LRSelectorInt::textInputClosed() {
     bool forceUpdate = false;
     int contentValue;
-    auto contentTmp = geode::utils::numFromString<int>(input->getString());
+    auto contentTmp = geode::utils::numFromString<int>(m_textInput->getString());
     if (contentTmp.isOk()) {
         contentValue = contentTmp.unwrap();
     } else {

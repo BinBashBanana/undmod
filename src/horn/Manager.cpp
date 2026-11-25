@@ -2,6 +2,7 @@
 
 #include <Geode/loader/Log.hpp>
 #include <Geode/loader/SettingV3.hpp>
+#include <Geode/loader/ModEvent.hpp>
 #include <Geode/utils/string.hpp>
 #include <fmt/format.h>
 
@@ -25,7 +26,7 @@ Manager* Manager::sharedManager() {
 bool Manager::init() {
     m_cache = Cache(geode::Mod::get()->getSavedValue<matjson::Value>("cache"));
 
-    std::ifstream packsJson(geode::Mod::get()->getResourcesDir() / "packs.json");
+    std::ifstream packsJson((geode::Mod::get()->getResourcesDir() / "packs.json").native());
     m_packs = matjson::parse(packsJson).unwrapOrDefault();
 
     loadSettings();
