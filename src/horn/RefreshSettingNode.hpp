@@ -1,11 +1,8 @@
 #pragma once
 
-#include <Geode/binding/ButtonSprite.hpp>
-#include <Geode/binding/CCMenuItemSpriteExtra.hpp>
-#include <Geode/binding/LoadingCircle.hpp>
 #include <Geode/loader/SettingV3.hpp>
+#include <Geode/ui/Button.hpp>
 #include <Geode/ui/LoadingSpinner.hpp>
-#include <Geode/cocos/menu_nodes/CCMenuItem.h>
 
 namespace horn {
 
@@ -39,13 +36,12 @@ private:
     bool init(std::shared_ptr<RefreshSettingValue> setting, float width);
 
     //! @brief Refresh callback.
-    //! @param sender Sender.
-    void onRefresh(cocos2d::CCObject* sender);
+    void onRefresh();
 
     void onCommit() override {}
     void onResetToDefault() override {}
 
-    CCMenuItemSpriteExtra* m_button;
+    geode::Button* m_button;
     geode::LoadingSpinner* m_spinner;
 };
 

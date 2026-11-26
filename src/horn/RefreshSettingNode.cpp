@@ -16,36 +16,22 @@ bool RefreshSettingNode::init(std::shared_ptr<RefreshSettingValue> setting, floa
     menu->setContentWidth(20.0f);
     auto pos = menu->getContentSize() / 2.0f;
 
-    auto* buttonSprite = cocos2d::CCSprite::createWithSpriteFrameName(
-        "GJ_updateBtn_001.png"
-    );
-    buttonSprite->setScale(0.5f);
-
-    m_button = CCMenuItemSpriteExtra::create(
-        buttonSprite,
-        this,
-        menu_selector(RefreshSettingNode::onRefresh)
-    );
+    m_button = geode::Button::createWithSpriteFrameName("GJ_updateBtn_001.png", [this](geode::Button* sender) {
+        onRefresh();
+    });
+    m_button->getDisplayNode()->setScale(0.5f);
     m_button->setPosition(pos);
     menu->addChild(m_button);
 
     m_spinner = geode::LoadingSpinner::create(20.0f);
     m_spinner->setVisible(false);
-
-    auto* spinnerHolder = cocos2d::CCMenuItem::create();
-    spinnerHolder->setContentSize({ 20.0f, 20.0f });
-    spinnerHolder->setPosition(pos);
-    m_spinner->setPosition({
-        spinnerHolder->getContentSize() / 2.0f
-    });
-
-    spinnerHolder->addChild(m_spinner);
-    menu->addChild(spinnerHolder);
+    m_spinner->setPosition(pos);
+    menu->addChild(m_spinner);
 
     return true;
 }
 
-void RefreshSettingNode::onRefresh(cocos2d::CCObject* sender) {
+void RefreshSettingNode::onRefresh() {
     m_button->setVisible(false);
     m_spinner->setVisible(true);
 
